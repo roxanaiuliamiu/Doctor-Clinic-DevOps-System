@@ -1,0 +1,23 @@
+namespace: doctor-clinic-dev
+
+image:
+  repository: registry.gitlab.com/your-group/your-project/doctor-clinic-app
+  tag: latest
+  pullPolicy: Always
+
+app:
+  replicaCount: 1
+  env:
+    APP_ENV: local
+    APP_DEBUG: "true"
+    APP_URL: "http://dev.doctor-clinic.local"
+    DB_HOST: "mysql"
+    DB_PORT: "3306"
+    DB_DATABASE: "doctors_dev"
+    DB_USERNAME: "doctors_user"
+
+mysql:
+  database: doctors_dev
+
+ingress:
+  enabled: false
