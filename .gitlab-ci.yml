@@ -76,7 +76,8 @@ deploy_dev:
     - ci
   image: "registry.gitlab.com/miulina/doctor-clinic-devops-system/deploy:kubectl-helm"
   before_script:
-    - echo "$KUBE_CONFIG_DEV" > kubeconfig.yaml
+    - echo "$KUBE_CONFIG_DEV" | base64 -d > kubeconfig.yaml
+    - chmod 600 kubeconfig.yaml
     - export KUBECONFIG="$CI_PROJECT_DIR/kubeconfig.yaml"
     - kubectl version --client
     - helm version
