@@ -1,8 +1,6 @@
 stages:
   - test
   - build
-  - deploy_dev
-  - deploy_prod
 
 variables:
   IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system"
@@ -11,9 +9,10 @@ variables:
 test:
   stage: test
   tags:
-    - local
+    - docker
+  image: webdevops/php-node:8.2
   script:
-    - copy .env.example .env
+    - cp .env.example .env
     - composer install --no-interaction --prefer-dist --optimize-autoloader
     - npm install
     - npm run build
@@ -27,11 +26,17 @@ test:
 build:
   stage: build
   tags:
-    - local
+    - docker
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
   script:
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
-    - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
+    - docker push "$IMAGE_NAME:$IMAGE_TAG"
   only:
     - main
     - dev
