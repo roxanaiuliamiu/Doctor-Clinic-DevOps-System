@@ -3,7 +3,6 @@ stages:
   - deploy_image
   - test
   - build
-  - deploy_dev
 
 variables:
   IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system"
@@ -81,21 +80,4 @@ build:
     - docker push "$IMAGE_NAME:$IMAGE_TAG"
   only:
     - main
-    - dev
-
-deploy_dev:
-  stage: deploy_dev
-  tags:
-    - docker
-    - ci
-  image: "registry.gitlab.com/miulina/doctor-clinic-devops-system/deploy:kubectl-helm"
-  before_script:
-    - echo "$KUBE_CONFIG_DEV" > kubeconfig.yaml
-    - export KUBECONFIG="$CI_PROJECT_DIR/kubeconfig.yaml"
-    - kubectl version --client
-    - helm version
-    - kubectl get ns
-  script:
-    - helm upgrade --install doctor-clinic-dev ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
-  only:
     - dev
