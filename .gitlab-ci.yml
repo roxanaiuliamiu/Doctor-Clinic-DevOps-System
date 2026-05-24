@@ -10,6 +10,7 @@ test:
   stage: test
   tags:
     - docker
+    - ci
   image: php:8.2-cli
   before_script:
     - apt-get update
@@ -33,12 +34,10 @@ build:
   stage: build
   tags:
     - docker
+    - ci
   image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
   before_script:
+    - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
   script:
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
