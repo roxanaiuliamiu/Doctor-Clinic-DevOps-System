@@ -1,0 +1,37 @@
+namespace: doctor-clinic
+
+image:
+  repository: roxanaiuliamiu/doctor-clinic-app
+  tag: latest
+  pullPolicy: Always
+
+app:
+  replicaCount: 1
+  env:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_URL: http://localhost:8000
+    DB_HOST: mysql
+    DB_PORT: "3306"
+    DB_DATABASE: doctors
+    DB_USERNAME: doctors_user
+
+secret:
+  APP_KEY: "base64:ofnk6Y7DtrlE+b+9w9VPPj//imnc+1408neAYN4mcFI="
+  DB_PASSWORD: "dbpassword"
+  MYSQL_ROOT_PASSWORD: "rootpassword"
+
+mysql:
+  image: mysql:8.0
+  database: doctors
+  user: doctors_user
+  storage: 5Gi
+
+service:
+  app:
+    port: 8000
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 5Gi

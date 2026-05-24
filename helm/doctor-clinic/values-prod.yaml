@@ -1,0 +1,27 @@
+namespace: doctor-clinic-prod
+
+image:
+  repository: registry.gitlab.com/your-group/your-project/doctor-clinic-app
+  tag: latest
+  pullPolicy: Always
+
+app:
+  replicaCount: 2
+  env:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_URL: "https://clinic.example.com"
+    DB_HOST: "mysql"
+    DB_PORT: "3306"
+    DB_DATABASE: "doctors_prod"
+    DB_USERNAME: "doctors_user"
+
+mysql:
+  database: doctors_prod
+
+ingress:
+  enabled: true
+  className: nginx
+  host: clinic.example.com
+  tls: true
+  tlsSecretName: doctor-clinic-tls

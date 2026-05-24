@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doctor-clinic-app
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      app: doctor-clinic-app
+  template:
+    metadata:
+      labels:
+        app: doctor-clinic-app
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cd /var/www
+
+              grep -q '^APP_KEY=' .env && sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env || echo "APP_KEY=${APP_KEY}" >> .env
+              grep -q '^SESSION_DRIVER=' .env && sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=file|" .env || echo "SESSION_DRIVER=file" >> .env
+              grep -q '^CACHE_STORE=' .env && sed -i "s|^CACHE_STORE=.*|CACHE_STORE=file|" .env || echo "CACHE_STORE=file" >> .env
+
+              grep -q '^DB_CONNECTION=' .env && sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env || echo "DB_CONNECTION=mysql" >> .env
+              grep -q '^DB_HOST=' .env && sed -i "s|^DB_HOST=.*|DB_HOST=${DB_HOST}|" .env || echo "DB_HOST=${DB_HOST}" >> .env
+              grep -q '^DB_PORT=' .env && sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT}|" .env || echo "DB_PORT=${DB_PORT}" >> .env
+              grep -q '^DB_DATABASE=' .env && sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE}|" .env || echo "DB_DATABASE=${DB_DATABASE}" >> .env
+              grep -q '^DB_USERNAME=' .env && sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME}|" .env || echo "DB_USERNAME=${DB_USERNAME}" >> .env
+              grep -q '^DB_PASSWORD=' .env && sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env || echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
+
+              php artisan config:clear
+              php artisan cache:clear || true
+              php artisan serve --host=0.0.0.0 --port=8000
+              php artisan cache:clear || true
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: {{ .Values.app.env.APP_ENV | quote }}
+            - name: APP_DEBUG
+              value: {{ .Values.app.env.APP_DEBUG | quote }}
+            - name: APP_URL
+              value: {{ .Values.app.env.APP_URL | quote }}
+            - name: DB_HOST
+              value: {{ .Values.app.env.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.app.env.DB_PORT | quote }}
+            - name: DB_DATABASE
+              value: {{ .Values.app.env.DB_DATABASE | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.app.env.DB_USERNAME | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doctor-clinic-secret
+                  key: DB_PASSWORD
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: doctor-clinic-secret
+                  key: APP_KEY
