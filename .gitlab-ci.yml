@@ -1,96 +1,77 @@
 stages:
-  - validate
-  - build
   - test
-  - package
-  - deploy
+  - build
+  - deploy_dev
+  - deploy_prod
 
 variables:
-  APP_ENV: testing
-  APP_DEBUG: "true"
-  DB_CONNECTION: sqlite
-  DB_DATABASE: database/database.sqlite
-  COMPOSER_ALLOW_SUPERUSER: "1"
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/doctor-clinic-app"
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
   paths:
     - vendor/
     - node_modules/
 
-php_syntax:
-  stage: validate
-  image: php:8.2
-  before_script:
-    - apt-get update && apt-get install -y git unzip curl
-    - curl -sS https://getcomposer.org/installer | php
-    - mv composer.phar /usr/local/bin/composer
-    - composer install --no-interaction --prefer-dist --optimize-autoloader
-  script:
-    - find app config database routes resources/views tests -name "*.php" -print0 | xargs -0 -n1 php -l
-
-build_frontend:
-  stage: build
-  image: node:20
-  script:
-    - npm ci
-    - npm run build
-  artifacts:
-    paths:
-      - public/build/
-    expire_in: 1 week
-
-test_application:
+test:
   stage: test
-  image: php:8.2
-  needs:
-    - build_frontend
+  image: php:8.2-cli
   before_script:
-    - apt-get update && apt-get install -y git unzip curl libzip-dev libpng-dev libicu-dev libonig-dev libxml2-dev libsqlite3-dev sqlite3
-    - docker-php-ext-install pdo pdo_sqlite mbstring bcmath intl zip
+    - apt-get update && apt-get install -y git unzip curl libzip-dev libpng-dev libicu-dev libonig-dev default-mysql-client
+    - docker-php-ext-install pdo pdo_mysql mbstring bcmath zip intl
     - curl -sS https://getcomposer.org/installer | php
     - mv composer.phar /usr/local/bin/composer
-    - cp .env.example .env
-    - mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache database
-    - chmod -R 777 storage bootstrap/cache database
-    - touch database/database.sqlite
+    - cp .env.example .env || true
     - composer install --no-interaction --prefer-dist --optimize-autoloader
     - php artisan key:generate
-    - php artisan migrate --force
-    - php artisan optimize:clear
   script:
     - php artisan test
-  artifacts:
-    when: always
-    paths:
-      - public/build/
-      - storage/logs/
-    expire_in: 1 week
+  only:
+    - dev
+    - main
+    - merge_requests
 
-package_project:
-  stage: package
-  image: alpine:latest
-  needs:
-    - build_frontend
-    - test_application
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
   script:
-    - mkdir -p release
-    - cp -r app bootstrap config database docker k8s public resources routes scripts storage terraform tests release/ || true
-    - cp .dockerignore .gitignore artisan composer.json composer.lock DEVOPS-IMPLEMENTATION.md docker-compose.yml Dockerfile monitoring-plan.md package.json package-lock.json phpunit.xml postcss.config.js README.md tailwind.config.js vite.config.js .gitlab-ci.yml release/ 2>/dev/null || true
-    - tar -czf doctor-clinic-devops-system.tar.gz release
-    - echo "Project package created successfully"
-  artifacts:
-    paths:
-      - doctor-clinic-devops-system.tar.gz
-    expire_in: 1 week
+    - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
+    - docker push "$IMAGE_NAME:$IMAGE_TAG"
+  only:
+    - dev
+    - main
 
-deploy_placeholder:
-  stage: deploy
-  image: alpine:latest
-  needs:
-    - package_project
+deploy_dev:
+  stage: deploy_dev
+  image:
+    name: alpine/helm:3.15.2
+    entrypoint: [""]
+  before_script:
+    - mkdir -p ~/.kube
+    - echo "$KUBE_CONFIG_DEV" | base64 -d > ~/.kube/config
+    - helm version
   script:
-    - 'echo "Deployment stage placeholder"'
-    - 'echo "Future target Kubernetes / VM / registry deployment"'
+    - helm upgrade --install doctor-clinic-dev ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
+  only:
+    - dev
+
+deploy_prod:
+  stage: deploy_prod
+  image:
+    name: alpine/helm:3.15.2
+    entrypoint: [""]
+  before_script:
+    - mkdir -p ~/.kube
+    - echo "$KUBE_CONFIG_PROD" | base64 -d > ~/.kube/config
+    - helm version
+  script:
+    - helm upgrade --install doctor-clinic-prod ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
   only:
     - main
+  when: manual
