@@ -5,7 +5,7 @@ stages:
   - deploy_prod
 
 variables:
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/doctor-clinic-app"
+  IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system"
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
 
 cache:
@@ -27,8 +27,8 @@ test:
   script:
     - php artisan test
   only:
-    - dev
     - main
+    - dev
     - merge_requests
 
 build:
@@ -44,8 +44,8 @@ build:
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
     - docker push "$IMAGE_NAME:$IMAGE_TAG"
   only:
-    - dev
     - main
+    - dev
 
 deploy_dev:
   stage: deploy_dev
