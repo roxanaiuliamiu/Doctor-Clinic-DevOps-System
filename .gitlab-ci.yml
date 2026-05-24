@@ -1,5 +1,6 @@
 stages:
   - ci_image
+  - deploy_image
   - test
   - build
 
@@ -8,6 +9,8 @@ variables:
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
   CI_IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system/ci"
   CI_IMAGE_TAG: "php82-node"
+  DEPLOY_IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system/deploy"
+  DEPLOY_IMAGE_TAG: "kubectl-helm"
 
 build_ci_image:
   stage: ci_image
@@ -26,18 +29,29 @@ build_ci_image:
   only:
     - main
 
+build_deploy_image:
+  stage: deploy_image
+  tags:
+    - docker
+    - ci
+  image: docker:24
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  script:
+    - docker build -f Dockerfile.deploy -t "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG" .
+    - docker push "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
+  only:
+    - main
+
 test:
   stage: test
   tags:
     - docker
     - ci
-  image: php:8.2-cli
-  before_script:
-    - apt-get update
-    - apt-get install -y git curl unzip libzip-dev zip nodejs npm
-    - docker-php-ext-install zip
-    - curl -sS https://getcomposer.org/installer | php
-    - mv composer.phar /usr/local/bin/composer
+  image: "registry.gitlab.com/miulina/doctor-clinic-devops-system/ci:php82-node"
   script:
     - cp .env.example .env
     - composer install --no-interaction --prefer-dist --optimize-autoloader

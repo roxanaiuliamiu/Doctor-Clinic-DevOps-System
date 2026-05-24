@@ -1,0 +1,22 @@
+FROM alpine:3.20
+
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git \
+    ca-certificates
+
+ARG KUBECTL_VERSION=v1.30.1
+ARG HELM_VERSION=v3.15.4
+
+RUN curl -fsSL -o /usr/local/bin/kubectl \
+    https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && chmod +x /usr/local/bin/kubectl
+
+RUN curl -fsSL https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz -o /tmp/helm.tar.gz \
+    && tar -zxvf /tmp/helm.tar.gz -C /tmp \
+    && mv /tmp/linux-amd64/helm /usr/local/bin/helm \
+    && chmod +x /usr/local/bin/helm \
+    && rm -rf /tmp/helm.tar.gz /tmp/linux-amd64
+
+WORKDIR /app
