@@ -1,10 +1,30 @@
 stages:
+  - ci_image
   - test
   - build
 
 variables:
   IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system"
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+  CI_IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system/ci"
+  CI_IMAGE_TAG: "php82-node"
+
+build_ci_image:
+  stage: ci_image
+  tags:
+    - docker
+    - ci
+  image: docker:24
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  script:
+    - docker build -f Dockerfile.ci -t "$CI_IMAGE_NAME:$CI_IMAGE_TAG" .
+    - docker push "$CI_IMAGE_NAME:$CI_IMAGE_TAG"
+  only:
+    - main
 
 test:
   stage: test
@@ -36,6 +56,8 @@ build:
     - docker
     - ci
   image: docker:24
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
   before_script:
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
