@@ -14,8 +14,10 @@ app:
 mysql:
   database: "doctors_dev"
 
-ingress:
-  enabled: false
+secret:
+  APP_KEY: "base64:dev-change-me"
+  DB_PASSWORD: "dev-password"
+  MYSQL_ROOT_PASSWORD: "dev-root-password"
 
 persistence:
   size: 2Gi
