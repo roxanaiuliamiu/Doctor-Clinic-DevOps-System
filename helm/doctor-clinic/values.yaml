@@ -45,6 +45,11 @@ secret:
   DB_PASSWORD: "change-me"
   MYSQL_ROOT_PASSWORD: "root-change-me"
 
+secret:
+  APP_KEY: "base64:change-me"
+  DB_PASSWORD: "change-me"
+  MYSQL_ROOT_PASSWORD: "root-change-me"
+
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
