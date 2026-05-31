@@ -1,5 +1,0 @@
-project_name = "Doctor-Clinic-DevOps-System"
-environment  = "production"
-app_port     = 8080
-db_name      = "doktors"
-db_user      = "doktors_user"

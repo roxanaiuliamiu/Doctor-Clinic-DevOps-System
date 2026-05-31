@@ -1,7 +1,7 @@
 namespace: doctor-clinic
 
 image:
-  repository: roxanaiuliamiu/doctor-clinic-app
+  repository: registry.gitlab.com/miulina/doctor-clinic-devops-system/doctor-clinic-app
   tag: latest
   pullPolicy: Always
 
@@ -10,11 +10,11 @@ app:
   env:
     APP_ENV: production
     APP_DEBUG: "false"
-    APP_URL: http://localhost:8000
-    DB_HOST: mysql
+    APP_URL: "http://doctor-clinic.local"
+    DB_HOST: "mysql"
     DB_PORT: "3306"
-    DB_DATABASE: doctors
-    DB_USERNAME: doctors_user
+    DB_DATABASE: "doctors"
+    DB_USERNAME: "doctors_user"
 
 secret:
   APP_KEY: "base64:ofnk6Y7DtrlE+b+9w9VPPj//imnc+1408neAYN4mcFI="
@@ -23,13 +23,23 @@ secret:
 
 mysql:
   image: mysql:8.0
-  database: doctors
-  user: doctors_user
+  database: "doctors"
+  user: "doctors_user"
   storage: 5Gi
 
 service:
-  app:
-    port: 8000
+  web:
+    port: 80
+  mysql:
+    port: 3306
+
+ingress:
+  enabled: true
+  className: nginx
+  host: doctor-clinic.local
+  path: /
+  tls: false
+  tlsSecretName: ""
 
 persistence:
   enabled: true

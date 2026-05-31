@@ -1,10 +1,5 @@
 namespace: doctor-clinic-dev
 
-image:
-  repository: registry.gitlab.com/your-group/your-project/doctor-clinic-app
-  tag: latest
-  pullPolicy: Always
-
 app:
   replicaCount: 1
   env:
@@ -17,7 +12,10 @@ app:
     DB_USERNAME: "doctors_user"
 
 mysql:
-  database: doctors_dev
+  database: "doctors_dev"
 
 ingress:
   enabled: false
+
+persistence:
+  size: 5Gi

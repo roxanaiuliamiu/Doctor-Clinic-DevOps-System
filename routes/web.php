@@ -23,6 +23,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
+
 Route::get('/', function () {
     // Make landing page robust (fresh installs / test DBs might not have all tables).
     $specialties = collect();
@@ -42,6 +43,7 @@ Route::get('/', function () {
 
     return view('welcome', compact('specialties', 'doctors'));
 });
+
 Route::get('/doctors', [PublicPageController::class, 'doctors'])->name('public.doctors');
 Route::get('/specialties', [PublicPageController::class, 'specialties'])->name('public.specialties');
 Route::get('/about', [PublicPageController::class, 'about'])->name('public.about');
@@ -112,4 +114,3 @@ Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-

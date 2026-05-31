@@ -7,5 +7,6 @@ spec:
   selector:
     app: mysql
   ports:
-    - port: 3306
+    - port: {{ .Values.service.mysql.port }}
       targetPort: 3306
+  type: ClusterIP

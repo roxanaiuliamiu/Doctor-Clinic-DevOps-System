@@ -1,6 +1,6 @@
 apiVersion: v2
 name: doctor-clinic
-description: Helm chart for Doctor Clinic DevOps System
+description: Helm chart for Doctor Clinic Laravel application
 type: application
 version: 0.1.0
-appVersion: "1.0.0"
+appVersion: "1.0"

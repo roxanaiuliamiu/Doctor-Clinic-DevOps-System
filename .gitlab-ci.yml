@@ -1,129 +1,34 @@
 stages:
-  - ci_image
-  - deploy_image
   - test
   - build
-  - deploy_dev
-  - deploy_prod
 
 variables:
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/doctor-clinic-app"
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
-  CI_IMAGE_NAME: "$CI_REGISTRY_IMAGE/ci"
-  CI_IMAGE_TAG: "php82-node"
-  DEPLOY_IMAGE_NAME: "$CI_REGISTRY_IMAGE/deploy"
-  DEPLOY_IMAGE_TAG: "kubectl-helm"
-
-build_ci_image:
-  stage: ci_image
-  tags:
-    - docker
-    - ci
-  image: docker:24
-  variables:
-    DOCKER_HOST: "unix:///var/run/docker.sock"
-  before_script:
-    - docker info
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-  script:
-    - docker build -f Dockerfile.ci -t "$CI_IMAGE_NAME:$CI_IMAGE_TAG" .
-    - docker push "$CI_IMAGE_NAME:$CI_IMAGE_TAG"
-  only:
-    - main
-
-build_deploy_image:
-  stage: deploy_image
-  tags:
-    - docker
-    - ci
-  image: docker:24
-  variables:
-    DOCKER_HOST: "unix:///var/run/docker.sock"
-  before_script:
-    - docker info
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-  script:
-    - docker build -f Dockerfile.deploy -t "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG" .
-    - docker push "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
-  only:
-    - main
 
 test:
   stage: test
   tags:
     - docker
     - ci
-  image: "$CI_IMAGE_NAME:$CI_IMAGE_TAG"
   script:
-    - cp .env.example .env
-    - composer install --no-interaction --prefer-dist --optimize-autoloader
-    - npm install
-    - npm run build
-    - php artisan key:generate
-    - php artisan test
+    - docker --version
+    - docker run --rm php:8.2-cli php -v
+    - docker run --rm composer:2 composer --version
   only:
-    - main
     - dev
-    - merge_requests
+    - main
 
 build:
   stage: build
   tags:
     - docker
     - ci
-  image: docker:24
-  variables:
-    DOCKER_HOST: "unix:///var/run/docker.sock"
-  before_script:
-    - docker info
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
   script:
-    - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
-    - docker push "$IMAGE_NAME:$IMAGE_TAG"
-  only:
-    - main
-    - dev
-
-deploy_dev:
-  stage: deploy_dev
-  tags:
-    - docker
-    - ci
-  image: "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
-  before_script:
-    - echo "$KUBE_CONFIG_DEV" | base64 -d > kubeconfig.yaml
-    - chmod 600 kubeconfig.yaml
-    - export KUBECONFIG="$CI_PROJECT_DIR/kubeconfig.yaml"
-    - kubectl version --client
-    - helm version
-    - kubectl get ns
-  script:
-    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
-    - helm upgrade --install doctor-clinic-dev ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
-    - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
-    - kubectl get all -n doctor-clinic-dev
+    - docker --version
+    - echo "$env:CI_REGISTRY_PASSWORD" | docker login -u "$env:CI_REGISTRY_USER" "$env:CI_REGISTRY" --password-stdin
+    - docker build -t "$env:CI_REGISTRY_IMAGE/doctor-clinic-app:$env:CI_COMMIT_SHORT_SHA" .
+    - docker push "$env:CI_REGISTRY_IMAGE/doctor-clinic-app:$env:CI_COMMIT_SHORT_SHA"
   only:
     - dev
-
-deploy_prod:
-  stage: deploy_prod
-  tags:
-    - docker
-    - ci
-  image: "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
-  before_script:
-    - echo "$KUBE_CONFIG_PROD" | base64 -d > kubeconfig.yaml
-    - chmod 600 kubeconfig.yaml
-    - export KUBECONFIG="$CI_PROJECT_DIR/kubeconfig.yaml"
-    - kubectl version --client
-    - helm version
-    - kubectl get ns
-  script:
-    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
-    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
-    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
-    - kubectl get all -n doctor-clinic-prod
-  only:
     - main

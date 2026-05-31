@@ -1,0 +1,11 @@
+proxmox_endpoint = "https://YOUR-PROXMOX-IP:8006/api2/json"
+proxmox_username = "root@pam"
+proxmox_password = "CHANGE_ME"
+proxmox_node     = "YOUR-NODE-NAME"
+datastore_id     = "local"
+network_bridge   = "vmbr0"
+template_vm_id   = 9000
+runner_vm_id     = 220
+runner_vm_name   = "gitlab-runner-vm"
+runner_memory    = 4096
+runner_cores     = 2
