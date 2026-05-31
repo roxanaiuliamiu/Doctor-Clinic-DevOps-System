@@ -1,47 +1,49 @@
-namespace: doctor-clinic
+namespace: default
 
 image:
-  repository: registry.gitlab.com/miulina/doctor-clinic-devops-system/doctor-clinic-app
-  tag: latest
-  pullPolicy: Always
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
 
 app:
   replicaCount: 1
   env:
-    APP_ENV: production
-    APP_DEBUG: "false"
-    APP_URL: "http://doctor-clinic.local"
+    APP_NAME: "Doctor Clinic"
+    APP_ENV: local
+    APP_DEBUG: "true"
+    APP_URL: "http://localhost"
+    DB_CONNECTION: "mysql"
     DB_HOST: "mysql"
     DB_PORT: "3306"
-    DB_DATABASE: "doctors"
+    DB_DATABASE: "doctors_db"
     DB_USERNAME: "doctors_user"
 
-secret:
-  APP_KEY: "base64:ofnk6Y7DtrlE+b+9w9VPPj//imnc+1408neAYN4mcFI="
-  DB_PASSWORD: "dbpassword"
-  MYSQL_ROOT_PASSWORD: "rootpassword"
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+php:
+  targetPort: 9000
 
 mysql:
-  image: mysql:8.0
-  database: "doctors"
-  user: "doctors_user"
-  storage: 5Gi
-
-service:
-  web:
-    port: 80
-  mysql:
-    port: 3306
-
-ingress:
-  enabled: true
-  className: nginx
-  host: doctor-clinic.local
-  path: /
-  tls: false
-  tlsSecretName: ""
+  image: "mysql:8.0"
+  port: 3306
+  database: "doctors_db"
+  username: "doctors_user"
 
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
-  size: 5Gi
+  size: 2Gi
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: doctor-clinic.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
