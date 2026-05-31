@@ -4,13 +4,14 @@ stages:
   - test
   - build
   - deploy_dev
+  - deploy_prod
 
 variables:
-  IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system"
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/doctor-clinic-app"
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
-  CI_IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system/ci"
+  CI_IMAGE_NAME: "$CI_REGISTRY_IMAGE/ci"
   CI_IMAGE_TAG: "php82-node"
-  DEPLOY_IMAGE_NAME: "registry.gitlab.com/miulina/doctor-clinic-devops-system/deploy"
+  DEPLOY_IMAGE_NAME: "$CI_REGISTRY_IMAGE/deploy"
   DEPLOY_IMAGE_TAG: "kubectl-helm"
 
 build_ci_image:
@@ -52,7 +53,7 @@ test:
   tags:
     - docker
     - ci
-  image: "registry.gitlab.com/miulina/doctor-clinic-devops-system/ci:php82-node"
+  image: "$CI_IMAGE_NAME:$CI_IMAGE_TAG"
   script:
     - cp .env.example .env
     - composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -88,7 +89,7 @@ deploy_dev:
   tags:
     - docker
     - ci
-  image: "registry.gitlab.com/miulina/doctor-clinic-devops-system/deploy:kubectl-helm"
+  image: "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
   before_script:
     - echo "$KUBE_CONFIG_DEV" | base64 -d > kubeconfig.yaml
     - chmod 600 kubeconfig.yaml
@@ -97,6 +98,32 @@ deploy_dev:
     - helm version
     - kubectl get ns
   script:
-    - helm upgrade --install doctor-clinic-dev ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
+    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
+    - helm upgrade --install doctor-clinic-dev ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
+    - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
+    - kubectl get all -n doctor-clinic-dev
   only:
     - dev
+
+deploy_prod:
+  stage: deploy_prod
+  tags:
+    - docker
+    - ci
+  image: "$DEPLOY_IMAGE_NAME:$DEPLOY_IMAGE_TAG"
+  before_script:
+    - echo "$KUBE_CONFIG_PROD" | base64 -d > kubeconfig.yaml
+    - chmod 600 kubeconfig.yaml
+    - export KUBECONFIG="$CI_PROJECT_DIR/kubeconfig.yaml"
+    - kubectl version --client
+    - helm version
+    - kubectl get ns
+  script:
+    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
+    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
+    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
+    - kubectl get all -n doctor-clinic-prod
+  only:
+    - main
