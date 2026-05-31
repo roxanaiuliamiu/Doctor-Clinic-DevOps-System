@@ -9,6 +9,7 @@ variables:
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
 
 test:
+  image: docker:24
   stage: test
   tags:
     - docker
@@ -22,6 +23,7 @@ test:
     - main
 
 build:
+  image: docker:24
   stage: build
   tags:
     - docker
@@ -36,6 +38,7 @@ build:
     - main
 
 deploy_dev:
+  image: dtzar/helm-kubectl:3.14.4
   stage: deploy_dev
   tags:
     - docker
@@ -55,6 +58,7 @@ deploy_dev:
     - dev
 
 deploy_prod:
+  image: dtzar/helm-kubectl:3.14.4
   stage: deploy_prod
   tags:
     - docker
