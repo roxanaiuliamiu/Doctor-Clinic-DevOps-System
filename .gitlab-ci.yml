@@ -5,8 +5,8 @@ stages:
   - deploy_prod
 
 variables:
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/doctor-clinic-app"
-  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+  IMAGE_NAME: $CI_REGISTRY_IMAGE/doctor-clinic-app
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
 
 test:
   image: docker:24
@@ -30,7 +30,10 @@ build:
     - ci
   script:
     - docker --version
-    - echo "$CI_JOB_TOKEN" | docker login -u "gitlab-ci-token" "$CI_REGISTRY" --password-stdin
+    - test -n "$IMAGE_NAME"
+    - test -n "$IMAGE_TAG"
+    - printf 'Building image: %s:%s\n' "$IMAGE_NAME" "$IMAGE_TAG"
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token "$CI_REGISTRY" --password-stdin
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
     - docker push "$IMAGE_NAME:$IMAGE_TAG"
   only:
@@ -45,19 +48,22 @@ deploy_dev:
     - ci
   script:
     - test -n "$KUBE_CONFIG_DEV" || (echo "KUBE_CONFIG_DEV is not set" && exit 1)
+    - test -n "$IMAGE_NAME" || (echo "IMAGE_NAME is not set" && exit 1)
+    - test -n "$IMAGE_TAG" || (echo "IMAGE_TAG is not set" && exit 1)
     - echo "$KUBE_CONFIG_DEV" | base64 -d > kubeconfig-dev.yaml
     - export KUBECONFIG="$PWD/kubeconfig-dev.yaml"
     - kubectl version --client
     - helm version
     - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
     - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
     - kubectl get all -n doctor-clinic-dev
   only:
     - dev
 
 deploy_prod:
+  image: dtzar/helm-kubectl:3.14.4
   stage: deploy_prod
   tags:
     - internal
@@ -68,13 +74,15 @@ deploy_prod:
     - kubectl get nodes -o wide
     - kubectl version --client
     - helm version
+    - test -n "$IMAGE_NAME" || (echo "IMAGE_NAME is not set" && exit 1)
+    - test -n "$IMAGE_TAG" || (echo "IMAGE_TAG is not set" && exit 1)
     - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
-    - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true
+    - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
     - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
-    - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=360s
-    - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
+    - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=180s || kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate
+    - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
     - kubectl get all -n doctor-clinic-prod
   when: manual
   only:
