@@ -41,18 +41,21 @@ deploy_dev:
     - docker
     - ci
   script:
-    - if (-not $env:KUBE_CONFIG_DEV) { throw "KUBE_CONFIG_DEV is not set" }
-    - echo "$env:KUBE_CONFIG_DEV" | Out-File -Encoding ascii kubeconfig-dev.b64
-    - $content = Get-Content kubeconfig-dev.b64 -Raw
-    - [System.IO.File]::WriteAllBytes("kubeconfig-dev.yaml", [System.Convert]::FromBase64String($content))
-    - $env:KUBECONFIG = "$PWD\kubeconfig-dev.yaml"
-    - kubectl version --client
-    - helm version
-    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
-    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$env:IMAGE_NAME" --set image.tag="$env:IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
-    - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
-    - kubectl get all -n doctor-clinic-dev
+    - |
+      if (-not $env:KUBE_CONFIG_DEV) {
+        throw "KUBE_CONFIG_DEV is not set"
+      }
+      echo "$env:KUBE_CONFIG_DEV" | Out-File -Encoding ascii kubeconfig-dev.b64
+      $content = Get-Content kubeconfig-dev.b64 -Raw
+      [System.IO.File]::WriteAllBytes("kubeconfig-dev.yaml", [System.Convert]::FromBase64String($content))
+      $env:KUBECONFIG = "$PWD\kubeconfig-dev.yaml"
+      kubectl version --client
+      helm version
+      helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
+      helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$env:IMAGE_NAME" --set image.tag="$env:IMAGE_TAG"
+      kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
+      kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
+      kubectl get all -n doctor-clinic-dev
   only:
     - dev
 
@@ -62,18 +65,21 @@ deploy_prod:
     - docker
     - ci
   script:
-    - if (-not $env:KUBE_CONFIG_PROD) { throw "KUBE_CONFIG_PROD is not set" }
-    - echo "$env:KUBE_CONFIG_PROD" | Out-File -Encoding ascii kubeconfig-prod.b64
-    - $content = Get-Content kubeconfig-prod.b64 -Raw
-    - [System.IO.File]::WriteAllBytes("kubeconfig-prod.yaml", [System.Convert]::FromBase64String($content))
-    - $env:KUBECONFIG = "$PWD\kubeconfig-prod.yaml"
-    - kubectl version --client
-    - helm version
-    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
-    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$env:IMAGE_NAME" --set image.tag="$env:IMAGE_TAG"
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
-    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
-    - kubectl get all -n doctor-clinic-prod
+    - |
+      if (-not $env:KUBE_CONFIG_PROD) {
+        throw "KUBE_CONFIG_PROD is not set"
+      }
+      echo "$env:KUBE_CONFIG_PROD" | Out-File -Encoding ascii kubeconfig-prod.b64
+      $content = Get-Content kubeconfig-prod.b64 -Raw
+      [System.IO.File]::WriteAllBytes("kubeconfig-prod.yaml", [System.Convert]::FromBase64String($content))
+      $env:KUBECONFIG = "$PWD\kubeconfig-prod.yaml"
+      kubectl version --client
+      helm version
+      helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
+      helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$env:IMAGE_NAME" --set image.tag="$env:IMAGE_TAG"
+      kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
+      kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
+      kubectl get all -n doctor-clinic-prod
   when: manual
   only:
     - main
