@@ -23,13 +23,16 @@ service:
     type: ClusterIP
     port: 80
     targetPort: 80
+  mysql:
+    type: ClusterIP
+    port: 3306
+    targetPort: 3306
 
 php:
   targetPort: 9000
 
 mysql:
   image: "mysql:8.0"
-  port: 3306
   database: "doctors_db"
   username: "doctors_user"
 
