@@ -2,7 +2,7 @@ namespace: default
 
 image:
   repository: ""
-  tag: "latest"
+  tag: latest
   pullPolicy: IfNotPresent
 
 app:
@@ -19,9 +19,10 @@ app:
     DB_USERNAME: "doctors_user"
 
 service:
-  type: ClusterIP
-  port: 80
-  targetPort: 80
+  web:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
 
 php:
   targetPort: 9000
