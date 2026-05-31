@@ -32,7 +32,6 @@ build:
     - docker --version
     - test -n "$IMAGE_NAME"
     - test -n "$IMAGE_TAG"
-    - printf 'Building image: %s:%s\n' "$IMAGE_NAME" "$IMAGE_TAG"
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token "$CI_REGISTRY" --password-stdin
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
     - docker push "$IMAGE_NAME:$IMAGE_TAG"
@@ -76,6 +75,7 @@ deploy_prod:
     - helm version
     - test -n "$IMAGE_NAME" || (echo "IMAGE_NAME is not set" && exit 1)
     - test -n "$IMAGE_TAG" || (echo "IMAGE_TAG is not set" && exit 1)
+    - printf 'Using image: %s:%s\n' "$IMAGE_NAME" "$IMAGE_TAG"
     - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
