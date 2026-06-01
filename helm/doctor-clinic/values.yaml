@@ -2,19 +2,15 @@ namespace: default
 
 image:
   repository: ""
-<<<<<<< HEAD
   tag: latest
-=======
-  tag: "latest"
->>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
   pullPolicy: IfNotPresent
 
 app:
-  replicaCount: 1
+  replicaCount: 2
   env:
     APP_NAME: "Doctor Clinic"
     APP_ENV: local
-    APP_DEBUG: "true"
+    APP_DEBUG: "false"
     APP_URL: "http://localhost"
     DB_CONNECTION: "mysql"
     DB_HOST: "mysql"
@@ -24,9 +20,10 @@ app:
 
 service:
   web:
-    type: ClusterIP
+    type: NodePort
     port: 80
     targetPort: 80
+    nodePort: 30080
   mysql:
     type: ClusterIP
     port: 3306
@@ -45,15 +42,10 @@ secret:
   DB_PASSWORD: "change-me"
   MYSQL_ROOT_PASSWORD: "root-change-me"
 
-secret:
-  APP_KEY: "base64:change-me"
-  DB_PASSWORD: "change-me"
-  MYSQL_ROOT_PASSWORD: "root-change-me"
-
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
-  size: 5Gi
+  size: 2Gi
 
 ingress:
   enabled: false
