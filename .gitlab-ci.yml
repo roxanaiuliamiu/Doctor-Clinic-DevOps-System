@@ -65,8 +65,7 @@ deploy_prod:
     - ci
   script:
     - test -n "$KUBE_CONFIG_PROD" || (echo "KUBE_CONFIG_PROD is not set" && exit 1)
-    - echo "$KUBE_CONFIG_PROD" | base64 -d > kubeconfig-prod.yaml
-    - export KUBECONFIG="$PWD/kubeconfig-prod.yaml"
+    - export KUBECONFIG="$KUBE_CONFIG_PROD"
     - echo "Checking kubeconfig server"
     - 'grep server: kubeconfig-prod.yaml'
     - echo "Checking cluster access"
