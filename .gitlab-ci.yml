@@ -62,7 +62,7 @@ deploy_prod:
   tags:
     - internal
   script:
-    - export KUBECONFIG=/root/kubeconfig-prod.yaml
+    - export KUBECONFIG=/home/gitlab-runner/.kube/config
     - echo "Checking cluster access"
     - kubectl cluster-info
     - kubectl get nodes -o wide
