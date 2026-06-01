@@ -67,7 +67,7 @@ deploy_prod:
     - test -n "$KUBE_CONFIG_PROD" || (echo "KUBE_CONFIG_PROD is not set" && exit 1)
     - export KUBECONFIG="$KUBE_CONFIG_PROD"
     - echo "Checking kubeconfig server"
-    - 'grep server: kubeconfig-prod.yaml'
+    - grep 'server:' "$KUBE_CONFIG_PROD"
     - echo "Checking cluster access"
     - kubectl cluster-info
     - kubectl get nodes -o wide
