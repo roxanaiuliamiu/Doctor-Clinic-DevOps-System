@@ -13,7 +13,8 @@ app:
 
 mysql:
   database: "doctors_prod"
-
+  user: "doctors_user"
+  
 secret:
   APP_KEY: "base64:prod-change-me"
   DB_PASSWORD: "prod-password"

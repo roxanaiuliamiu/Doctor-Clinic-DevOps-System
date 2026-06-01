@@ -34,7 +34,7 @@ php:
 mysql:
   image: "mysql:8.0"
   database: "doctors_db"
-  username: "doctors_user"
+  user: "doctors_user"
 
 secret:
   APP_KEY: "base64:change-me"
