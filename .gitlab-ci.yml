@@ -68,7 +68,7 @@ deploy_prod:
     - echo "$KUBE_CONFIG_PROD" | base64 -d > kubeconfig-prod.yaml
     - export KUBECONFIG="$PWD/kubeconfig-prod.yaml"
     - echo "Checking kubeconfig server"
-    - grep server: kubeconfig-prod.yaml
+    - 'grep server: kubeconfig-prod.yaml'
     - echo "Checking cluster access"
     - kubectl cluster-info
     - kubectl get nodes -o wide
