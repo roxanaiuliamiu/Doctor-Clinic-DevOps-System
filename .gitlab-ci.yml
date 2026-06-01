@@ -58,16 +58,11 @@ deploy_dev:
     - dev
 
 deploy_prod:
-  image: dtzar/helm-kubectl:3.14.4
   stage: deploy_prod
   tags:
-    - docker
-    - ci
+    - internal
   script:
-    - test -n "$KUBE_CONFIG_PROD" || (echo "KUBE_CONFIG_PROD is not set" && exit 1)
-    - export KUBECONFIG="$KUBE_CONFIG_PROD"
-    - echo "Checking kubeconfig server"
-    - grep 'server:' "$KUBE_CONFIG_PROD"
+    - export KUBECONFIG=/root/kubeconfig-prod.yaml
     - echo "Checking cluster access"
     - kubectl cluster-info
     - kubectl get nodes -o wide
