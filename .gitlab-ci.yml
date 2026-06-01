@@ -67,6 +67,11 @@ deploy_prod:
     - test -n "$KUBE_CONFIG_PROD" || (echo "KUBE_CONFIG_PROD is not set" && exit 1)
     - echo "$KUBE_CONFIG_PROD" | base64 -d > kubeconfig-prod.yaml
     - export KUBECONFIG="$PWD/kubeconfig-prod.yaml"
+    - echo "Checking kubeconfig server"
+    - grep server: kubeconfig-prod.yaml
+    - echo "Checking cluster access"
+    - kubectl cluster-info
+    - kubectl get nodes -o wide
     - kubectl version --client
     - helm version
     - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
