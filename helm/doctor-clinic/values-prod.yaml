@@ -13,10 +13,9 @@ app:
 
 mysql:
   database: "doctors_prod"
-  user: "doctors_user"
-  
+
 secret:
-  APP_KEY: "base64:lAIkP48E13abuzoIPLZy3yYybOPsS2zVlSY0i2vtV68="
+  APP_KEY: "base64:prod-change-me"
   DB_PASSWORD: "prod-password"
   MYSQL_ROOT_PASSWORD: "prod-root-password"
 
