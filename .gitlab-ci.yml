@@ -5,12 +5,15 @@ stages:
 variables:
   IMAGE_NAME: registry.gitlab.com/miulina/doctor-clinic-devops-system/doctor-clinic-app
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
 build:
   stage: build
   tags:
-    - shell-runner
+    - docker
+    - ci
   script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .
     - docker push "$IMAGE_NAME:$IMAGE_TAG"
   only:
@@ -20,7 +23,8 @@ build:
 deploy_dev:
   stage: deploy
   tags:
-    - shell-runner
+    - internal
+    - k8s
   script:
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-dev --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
@@ -35,7 +39,9 @@ deploy_dev:
 deploy_prod:
   stage: deploy
   tags:
-    - shell-runner
+    - internal
+    - k8s
+    - prod
   script:
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
