@@ -63,7 +63,17 @@ deploy_prod:
   script:
     - kubectl get nodes
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
-    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
+    - >
+      helm upgrade --install doctor-clinic ./helm/doctor-clinic
+      -n doctor-clinic-prod
+      --create-namespace
+      -f ./helm/doctor-clinic/values.yaml
+      -f ./helm/doctor-clinic/values-prod.yaml
+      --set image.repository="$IMAGE_NAME"
+      --set image.tag="$IMAGE_TAG"
+      --set secret.APP_KEY="$APP_KEY"
+      --set secret.DB_PASSWORD="$DB_PASSWORD"
+      --set secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
     - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
     - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=300s
