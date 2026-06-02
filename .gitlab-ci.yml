@@ -40,12 +40,16 @@ build:
     - main
 
 deploy_dev:
+<<<<<<< HEAD
   image: dtzar/helm-kubectl:3.14.4
+=======
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
   stage: deploy_dev
   tags:
     - docker
     - ci
   script:
+<<<<<<< HEAD
     - test -n "$KUBE_CONFIG_DEV" || (echo "KUBE_CONFIG_DEV is not set" && exit 1)
     - test -n "$IMAGE_NAME" || (echo "IMAGE_NAME is not set" && exit 1)
     - test -n "$IMAGE_TAG" || (echo "IMAGE_TAG is not set" && exit 1)
@@ -57,11 +61,24 @@ deploy_dev:
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
     - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
+=======
+    - echo "$env:KUBE_CONFIG_DEV" | Out-File -Encoding ascii kubeconfig-dev.b64
+    - $content = Get-Content kubeconfig-dev.b64 -Raw
+    - [System.IO.File]::WriteAllBytes("kubeconfig-dev.yaml", [System.Convert]::FromBase64String($content))
+    - $env:KUBECONFIG = "$PWD\kubeconfig-dev.yaml"
+    - kubectl version --client
+    - helm version
+    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml
+    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-dev.yaml --set image.repository="$env:CI_REGISTRY_IMAGE/doctor-clinic-app" --set image.tag="$env:CI_COMMIT_SHORT_SHA"
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
+    - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
     - kubectl get all -n doctor-clinic-dev
   only:
     - dev
 
 deploy_prod:
+<<<<<<< HEAD
   image: dtzar/helm-kubectl:3.14.4
   stage: deploy_prod
   tags:
@@ -83,6 +100,23 @@ deploy_prod:
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
     - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=180s || kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate
     - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
+=======
+  stage: deploy_prod
+  tags:
+    - docker
+    - ci
+  script:
+    - echo "$env:KUBE_CONFIG_PROD" | Out-File -Encoding ascii kubeconfig-prod.b64
+    - $content = Get-Content kubeconfig-prod.b64 -Raw
+    - [System.IO.File]::WriteAllBytes("kubeconfig-prod.yaml", [System.Convert]::FromBase64String($content))
+    - $env:KUBECONFIG = "$PWD\kubeconfig-prod.yaml"
+    - kubectl version --client
+    - helm version
+    - helm lint ./helm/doctor-clinic -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml
+    - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$env:CI_REGISTRY_IMAGE/doctor-clinic-app" --set image.tag="$env:CI_COMMIT_SHORT_SHA"
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
+    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
     - kubectl get all -n doctor-clinic-prod
   when: manual
   only:

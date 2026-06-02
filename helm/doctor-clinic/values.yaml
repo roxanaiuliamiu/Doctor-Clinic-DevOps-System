@@ -2,7 +2,11 @@ namespace: default
 
 image:
   repository: ""
+<<<<<<< HEAD
   tag: latest
+=======
+  tag: "latest"
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
   pullPolicy: IfNotPresent
 
 app:
@@ -19,6 +23,7 @@ app:
     DB_USERNAME: "doctors_user"
 
 service:
+<<<<<<< HEAD
   web:
     type: ClusterIP
     port: 80
@@ -27,12 +32,18 @@ service:
     type: ClusterIP
     port: 3306
     targetPort: 3306
+=======
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
 
 php:
   targetPort: 9000
 
 mysql:
   image: "mysql:8.0"
+<<<<<<< HEAD
   database: "doctors_db"
   user: "doctors_user"
 
@@ -40,11 +51,20 @@ secret:
   APP_KEY: "base64:change-me"
   DB_PASSWORD: "change-me"
   MYSQL_ROOT_PASSWORD: "root-change-me"
+=======
+  port: 3306
+  database: "doctors_db"
+  username: "doctors_user"
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
 
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
+<<<<<<< HEAD
   size: 5Gi
+=======
+  size: 2Gi
+>>>>>>> 6b3ef02 (Update CI/CD pipeline for dev and prod deployment)
 
 ingress:
   enabled: false

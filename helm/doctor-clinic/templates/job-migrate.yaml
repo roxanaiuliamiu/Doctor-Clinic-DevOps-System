@@ -4,13 +4,20 @@ metadata:
   name: doctor-clinic-migrate
   namespace: {{ .Values.namespace }}
 spec:
+  backoffLimit: 6
   template:
     spec:
       restartPolicy: Never
       containers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["php", "artisan", "migrate", "--force"]
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              until php -r 'try { new PDO("mysql:host=" . getenv("DB_HOST") . ";port=" . getenv("DB_PORT"), getenv("DB_USERNAME"), getenv("DB_PASSWORD")); echo "MySQL ready\n"; exit(0); } catch (Exception $e) { fwrite(STDERR, "Waiting for MySQL...\n"); exit(1); }'; do
+                sleep 5
+              done
+              php artisan migrate --force
           env:
             - name: DB_HOST
               value: {{ .Values.app.env.DB_HOST | quote }}

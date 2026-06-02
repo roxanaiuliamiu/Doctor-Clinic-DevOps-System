@@ -20,4 +20,4 @@ secret:
   MYSQL_ROOT_PASSWORD: "dev-root-password"
 
 persistence:
-  size: 5Gi
+  size: 2Gi
