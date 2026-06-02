@@ -7,6 +7,19 @@ variables:
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
   KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
+test:
+  stage: test
+  tags:
+    - docker
+    - ci
+  script:
+    - cp .env.example .env
+    - docker build -t doctor-clinic-test .
+    - docker run --rm doctor-clinic-test php artisan test
+  only:
+    - dev
+    - main
+
 build:
   stage: build
   tags:
@@ -25,7 +38,10 @@ deploy_dev:
   tags:
     - internal
     - k8s
+  variables:
+    KUBECONFIG: /home/gitlab-runner/.kube/config
   script:
+    - kubectl get nodes
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-dev --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-dev --create-namespace -f ./helm/doctor-clinic/values.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
     - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
@@ -42,7 +58,10 @@ deploy_prod:
     - internal
     - k8s
     - prod
+  variables:
+    KUBECONFIG: /home/gitlab-runner/.kube/config
   script:
+    - kubectl get nodes
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set image.repository="$IMAGE_NAME" --set image.tag="$IMAGE_TAG"
     - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
