@@ -6,7 +6,6 @@ stages:
 variables:
   IMAGE_NAME: registry.gitlab.com/miulina/doctor-clinic-devops-system/doctor-clinic-app
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-  KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
 test:
   stage: test
@@ -16,7 +15,7 @@ test:
   script:
     - cp .env.example .env
     - docker build -t doctor-clinic-test .
-    - docker run --rm doctor-clinic-test php artisan test
+    - docker run --rm doctor-clinic-test sh -c "php artisan key:generate --force && php artisan test"
   only:
     - dev
     - main
