@@ -85,7 +85,6 @@ deploy_prod:
   script:
     - kubectl get nodes
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
-    - kubectl delete job doctor-clinic-db-import -n doctor-clinic-prod --ignore-not-found=true || true
     - >
       helm upgrade --install doctor-clinic ./helm/doctor-clinic
       -n doctor-clinic-prod
@@ -99,19 +98,12 @@ deploy_prod:
       --set-string secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
     - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
     - |
-      if kubectl get job doctor-clinic-db-import -n doctor-clinic-prod >/dev/null 2>&1; then
-        kubectl wait --for=condition=complete job/doctor-clinic-db-import -n doctor-clinic-prod --timeout=300s
-      else
-        echo "doctor-clinic-db-import job not found in prod; skipping wait"
-      fi
-    - |
       if kubectl get job doctor-clinic-migrate -n doctor-clinic-prod >/dev/null 2>&1; then
         kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=300s
       else
         echo "doctor-clinic-migrate job not found in prod; skipping wait"
       fi
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
-    - kubectl logs -n doctor-clinic-prod job/doctor-clinic-db-import || true
     - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
     - kubectl get all -n doctor-clinic-prod
   only:

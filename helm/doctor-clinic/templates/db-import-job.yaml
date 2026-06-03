@@ -14,18 +14,24 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+              set -e
+
               echo "Waiting for MySQL..."
               until mysql -h mysql -u {{ .Values.mysql.user }} -p"$MYSQL_PASSWORD" -e "SELECT 1" {{ .Values.mysql.database }}; do
                 sleep 5
               done
 
-              {{- if .Values.dbImport.dropDatabase }}
-              echo "Dropping and recreating database..."
-              mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS {{ .Values.mysql.database }}; CREATE DATABASE {{ .Values.mysql.database }};"
-              {{- end }}
+              echo "Checking whether database already has tables..."
+              TABLE_COUNT=$(mysql -N -B -h mysql -u {{ .Values.mysql.user }} -p"$MYSQL_PASSWORD" {{ .Values.mysql.database }} -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '{{ .Values.mysql.database }}';")
+
+              if [ "$TABLE_COUNT" -gt 0 ]; then
+                echo "Database already initialized ($TABLE_COUNT tables found). Skipping import."
+                exit 0
+              fi
 
               echo "Importing SQL dump..."
               mysql -h mysql -u {{ .Values.mysql.user }} -p"$MYSQL_PASSWORD" {{ .Values.mysql.database }} < /sql/{{ .Values.dbImport.sqlFile }}
+
               echo "Import complete."
           env:
             - name: MYSQL_PASSWORD

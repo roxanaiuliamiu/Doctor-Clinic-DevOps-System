@@ -14,6 +14,12 @@ app:
 mysql:
   database: "doctors_prod"
 
+dbImport:
+  enabled: false
+
+migrate:
+  enabled: false
+
 secret:
   APP_KEY: ""
   DB_PASSWORD: ""

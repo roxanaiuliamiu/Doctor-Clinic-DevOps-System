@@ -23,6 +23,9 @@ dbImport:
   sqlFile: "DB_Doctors_Clinic_DevOps_System.sql"
   dropDatabase: false
 
+migrate:
+  enabled: true
+
 service:
   web:
     type: NodePort
