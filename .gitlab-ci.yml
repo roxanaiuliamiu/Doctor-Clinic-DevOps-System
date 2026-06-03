@@ -55,10 +55,10 @@ deploy_dev:
       --set-string secret.DB_PASSWORD="$DB_PASSWORD"
       --set-string secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
     - kubectl rollout status deployment/mysql -n doctor-clinic-dev --timeout=180s
-    - kubectl get job doctor-clinic-db-import -n doctor-clinic-dev >/dev/null 2>&1 && kubectl wait --for=condition=complete job/doctor-clinic-db-import -n doctor-clinic-dev --timeout=300s || true
+    - kubectl wait --for=condition=complete job/doctor-clinic-db-import -n doctor-clinic-dev --timeout=300s
     - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-dev --timeout=300s
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-dev --timeout=180s
-    - kubectl get job doctor-clinic-db-import -n doctor-clinic-dev >/dev/null 2>&1 && kubectl logs -n doctor-clinic-dev job/doctor-clinic-db-import || true
+    - kubectl logs -n doctor-clinic-dev job/doctor-clinic-db-import || true
     - kubectl logs -n doctor-clinic-dev job/doctor-clinic-migrate || true
     - kubectl get all -n doctor-clinic-dev
   only:
@@ -77,7 +77,22 @@ deploy_prod:
     - kubectl delete job doctor-clinic-migrate -n doctor-clinic-prod --ignore-not-found=true || true
     - helm upgrade --install doctor-clinic ./helm/doctor-clinic -n doctor-clinic-prod --create-namespace -f ./helm/doctor-clinic/values.yaml -f ./helm/doctor-clinic/values-prod.yaml --set-string image.repository="$IMAGE_NAME" --set-string image.tag="$IMAGE_TAG" --set-string secret.APP_KEY="$APP_KEY" --set-string secret.DB_PASSWORD="$DB_PASSWORD" --set-string secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
     - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
+    - kubectl delete job doctor-clinic-db-import -n doctor-clinic-prod --ignore-not-found=true || true
+      helm upgrade --install doctor-clinic ./helm/doctor-clinic
+      -n doctor-clinic-prod
+      --create-namespace
+      -f ./helm/doctor-clinic/values.yaml
+      -f ./helm/doctor-clinic/values-prod.yaml
+      --set-string image.repository="$IMAGE_NAME"
+      --set-string image.tag="$IMAGE_TAG"
+      --set-string secret.APP_KEY="$APP_KEY"
+      --set-string secret.DB_PASSWORD="$DB_PASSWORD"
+      --set-string secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
+    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
+    - kubectl wait --for=condition=complete job/doctor-clinic-db-import -n doctor-clinic-prod --timeout=300s
     - kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=300s
+    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
+    - kubectl logs -n doctor-clinic-prod job/doctor-clinic-db-import || true
     - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
     - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
     - kubectl get all -n doctor-clinic-prod
