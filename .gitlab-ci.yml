@@ -96,15 +96,22 @@ deploy_prod:
       --set-string secret.APP_KEY="$APP_KEY"
       --set-string secret.DB_PASSWORD="$DB_PASSWORD"
       --set-string secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
-    - kubectl rollout status deployment/mysql -n doctor-clinic-prod --timeout=180s
     - |
       if kubectl get job doctor-clinic-migrate -n doctor-clinic-prod >/dev/null 2>&1; then
-        kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=300s
+        kubectl wait --for=condition=complete job/doctor-clinic-migrate -n doctor-clinic-prod --timeout=300s || {
+          kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
+          exit 1
+        }
       else
         echo "doctor-clinic-migrate job not found in prod; skipping wait"
       fi
-    - kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s
-    - kubectl logs -n doctor-clinic-prod job/doctor-clinic-migrate || true
+    - |
+      kubectl rollout status deployment/doctor-clinic-web -n doctor-clinic-prod --timeout=180s || {
+        kubectl get pods -n doctor-clinic-prod -o wide
+        kubectl describe deployment doctor-clinic-web -n doctor-clinic-prod
+        kubectl describe pods -n doctor-clinic-prod
+        exit 1
+      }
     - kubectl get all -n doctor-clinic-prod
   only:
     - main
