@@ -15,9 +15,9 @@ mysql:
   database: "doctors_prod"
 
 secret:
-  APP_KEY: "base64:prod-change-me"
-  DB_PASSWORD: "prod-password"
-  MYSQL_ROOT_PASSWORD: "prod-root-password"
+  APP_KEY: ""
+  DB_PASSWORD: ""
+  MYSQL_ROOT_PASSWORD: ""
 
 persistence:
   size: 5Gi

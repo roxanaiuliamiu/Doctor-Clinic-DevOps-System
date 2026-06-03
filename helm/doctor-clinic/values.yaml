@@ -18,6 +18,11 @@ app:
     DB_DATABASE: "doctors_db"
     DB_USERNAME: "doctors_user"
 
+dbImport:
+  enabled: true
+  sqlFile: "DB_Doctors_Clinic_DevOps_System.sql"
+  dropDatabase: false
+
 service:
   web:
     type: NodePort
@@ -38,9 +43,9 @@ mysql:
   user: "doctors_user"
 
 secret:
-  APP_KEY: "base64:change-me"
-  DB_PASSWORD: "change-me"
-  MYSQL_ROOT_PASSWORD: "root-change-me"
+  APP_KEY: ""
+  DB_PASSWORD: ""
+  MYSQL_ROOT_PASSWORD: ""
 
 persistence:
   enabled: true

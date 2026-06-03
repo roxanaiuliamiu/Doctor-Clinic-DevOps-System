@@ -1,0 +1,48 @@
+{{- if .Values.dbImport.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: doctor-clinic-db-import
+  namespace: {{ .Values.namespace }}
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: db-import
+          image: mysql:8.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Waiting for MySQL..."
+              until mysql -h mysql -u {{ .Values.mysql.user }} -p"$MYSQL_PASSWORD" -e "SELECT 1" {{ .Values.mysql.database }}; do
+                sleep 5
+              done
+
+              {{- if .Values.dbImport.dropDatabase }}
+              echo "Dropping and recreating database..."
+              mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS {{ .Values.mysql.database }}; CREATE DATABASE {{ .Values.mysql.database }};"
+              {{- end }}
+
+              echo "Importing SQL dump..."
+              mysql -h mysql -u {{ .Values.mysql.user }} -p"$MYSQL_PASSWORD" {{ .Values.mysql.database }} < /sql/{{ .Values.dbImport.sqlFile }}
+              echo "Import complete."
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doctor-clinic-secret
+                  key: DB_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doctor-clinic-secret
+                  key: MYSQL_ROOT_PASSWORD
+          volumeMounts:
+            - name: sql-volume
+              mountPath: /sql
+      volumes:
+        - name: sql-volume
+          configMap:
+            name: doctor-clinic-db-import
+{{- end }}

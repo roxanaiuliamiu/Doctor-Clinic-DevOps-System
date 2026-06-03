@@ -1,0 +1,10 @@
+{{- if .Values.dbImport.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: doctor-clinic-db-import
+  namespace: {{ .Values.namespace }}
+data:
+  {{ .Values.dbImport.sqlFile }}: |
+{{ .Files.Get (printf "files/%s" .Values.dbImport.sqlFile) | indent 4 }}
+{{- end }}
